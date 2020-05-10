@@ -13,7 +13,8 @@ const render = require("./lib/htmlRenderer");
 const memberTypeL = [
     "Manager",
     "Intern",
-    "Engineer"
+    "Engineer",
+    "I don't want to add any"
 ]
 
 
@@ -33,17 +34,34 @@ const managerQ = [
     },
     {
         message: "what's your nameger ID",
-        name: "id"
+        name: "id",
+        validate: function validateId(id) {
+            if (id <= 0) {
+                return "Please enter a positve number"//data valication positive number and need to 
+                //be a number 
+            }
+
+            return id > 0;
+        }
     },
     {
         message: "what's your manager email",
-        name: "email"
+        name: "email",
+        validate: function validateEmail(email) {
+            if (email.indexOf('@') == -1) {
+                return "Please enter an email"//need to be email
+            }
+
+            return true;
+        }
     },
 
     {
         message: "what's your manager's office number",
-        name: "number"
+        name: "officeNumber"
+
     },
+
 ]
 
 
@@ -88,30 +106,99 @@ const engineerQ = [
     },
 ]
 
-inquirer
-    .prompt(managerQ).then(res => {
-        inquirer
-            .prompt(questionList).then(result => {
-                const memberTypeChoise = result.choices
-                if (memberTypeChoise = "Manager") {
-                    inquirer
-                        .prompt(questionList2)
+
+userInput()
+
+function createHtmlFile(mainContent) {
+
+    if (fs.existsSync("./output")) {
+        fs.writeFileSync("./output/team.html", mainContent)
+    } else {
+        fs.mkdirSync("./output")
+        fs.writeFileSync("./output/team.html", mainContent)
+
+    }
+}
+
+
+function userInput() {
+employeeList = [];
+
+
+    inquirer
+        .prompt(managerQ).then(res => {
+
+            const manager = new Manager(res.name, res.id, res.email, res.officeNumber)
+            employeeList.push(manager)
+            rollingQuestions(employeeList)
+      
+
+        })
+
+}
+
+function rollingQuestions(employeeList) {
+
+
+
+    inquirer
+        .prompt(questionList).then(async result => {
+
+            const memberTypeChoise = result.memberType
+
+            if (memberTypeChoise != "I don't want to add any") {
+
+                if (memberTypeChoise == "Manager") {
+                    await inquirer
+                        .prompt(managerQ)
+                        .then(result => {
+
+                            const manager = new Manager(result.name, result.id, result.email, result.officeNumber)
+                            employeeList.push(manager)
+
+                        })
+
+
+
                 }
-                else if (memberTypeChoise = "Intern") {
-                    inquirer
+                if (memberTypeChoise == "Intern") {
+                    await inquirer
                         .prompt(InternQ)
+                        .then(result => {
+
+                            const intern = new Intern(result.name, result.id, result.email, result.school)
+                            employeeList.push(intern)
+                            // console.log(intern)
+
+                        })
+
 
                 }
-                else {
-                    inquirer
+
+                if (memberTypeChoise == "Engineer") {
+                    await inquirer
                         .prompt(engineerQ)
+                        .then(result => {
+
+                            const engineer = new Engineer(result.name, result.id, result.email, result.github)
+                            employeeList.push(engineer)
+                            // console.log(engineer)
+
+                        })
+
                 }
-            })
+                rollingQuestions(employeeList)
+            }
+            else {
+                mainContent = render(employeeList)
+                createHtmlFile(mainContent)
+            }
 
-        }).then()
 
 
+        })
 
+}
 
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
